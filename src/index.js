@@ -150,25 +150,64 @@ const conectarWhatsapp = async () => {
             }
 
             // ===== MANEJO DEL "SI" PARA DIFERENTES CONTEXTOS =====
-            if ((mensajeNormalizado === 'si' || mensajeNormalizado === 'sí' || mensajeNormalizado === 'inscribirme') && userContext[id].consultoChatbots) {
-                await enviarQRPago(sock, id, 'Curso de ChatBots');
-                userContext[id].consultoChatbots = false;
-                userContext[id].conAsesor = true; // Transferir a asesor después del pago
+            if (mensajeNormalizado === 'si' || mensajeNormalizado === 'sí') {
+    // Solo para el curso de ChatBots
+    if (userContext[id].consultoChatbots) {
+        await enviarQRPago(sock, id, 'Curso de ChatBots');
+        userContext[id].consultoChatbots = false;
+        userContext[id].conAsesor = true;
+        
+        // Notificar a asesores sobre inscripción
+        for (const asesor of advisorNumbers) {
+            await sock.sendMessage(asesor, {
+                text: `💰 *NUEVA INSCRIPCIÓN - CURSO CHATBOTS*
                 
-                // Notificar a asesores sobre inscripción
-                for (const asesor of advisorNumbers) {
-                    await sock.sendMessage(asesor, {
-                        text: `💰 *NUEVA INSCRIPCIÓN - CURSO CHATBOTS*
-                        
-📱 Usuario: ${phoneNumber}
+📱 Usuario: ${id.replace('@s.whatsapp.net', '')}
 ⏰ Hora: ${new Date().toLocaleString()}
 🎓 Servicio: Curso de ChatBots
 
 El usuario ya recibió el QR de pago. Favor realizar seguimiento para completar inscripción.`
-                    });
-                }
-                return;
-            }
+            });
+        }
+        return;
+    }
+    
+    // Para Laravel (próximo lanzamiento)
+    if (userContext[id].esperandoConfirmacion && userContext[id].servicioSolicitado === 'Curso Laravel') {
+        userContext[id].conAsesor = true;
+        userContext[id].esperandoConfirmacion = false;
+        
+        // Notificar a asesores
+        for (const asesor of advisorNumbers) {
+            await sock.sendMessage(asesor, {
+                text: `🚀 *INTERÉS EN CURSO LARAVEL*
+                
+📱 Usuario: ${id.replace('@s.whatsapp.net', '')}
+⏰ Hora: ${new Date().toLocaleString()}
+💼 Servicio: Curso Laravel (próximo lanzamiento)
+
+El usuario quiere ser notificado cuando esté disponible el curso de Laravel.`
+            });
+        }
+        
+        await sock.sendMessage(id, {
+            text: `✅ *¡Perfecto!* 
+
+Te hemos agregado a nuestra lista de interesados para el Curso de Laravel.
+
+📧 Serás el primero en recibir:
+• Fecha de inicio definitiva
+• Precio especial de lanzamiento (30% descuento)
+• Temario completo actualizado
+
+Un asesor se pondrá en contacto contigo muy pronto para confirmar tus datos.
+
+🚀 ¡Gracias por tu interés!`
+        });
+        return;
+    }
+}
+
 
             if (mensajeNormalizado === 'si' || mensajeNormalizado === 'sí') {
                 if (userContext[id].esperandoConfirmacion) {
@@ -199,6 +238,17 @@ El usuario ya recibió el QR de pago. Favor realizar seguimiento para completar 
                 return;
             }
 
+             if (mensajeRecibido === 'C') {
+                await enviarInfoDesarrolloWeb(sock, id);
+                // Ya no se necesita hacer nada más, la función maneja todo
+                return;
+            }
+            
+            if (mensajeRecibido === 'D') {
+                await enviarInfoProyectosUniversitarios(sock, id);
+                // Ya no se necesita hacer nada más, la función maneja todo
+                return;
+            }
             // Procesar opciones del menú principal
             const menuActual = userContext[id].menuActual;
             const menu = menuData[menuActual];
@@ -296,7 +346,7 @@ const inicializarContexto = (id) => {
 
 const enviarBienvenida = async (sock, id) => {
     await sock.sendMessage(id, {
-        text: `🎉 *¡Hola! Bienvenido/a a SYSOFT* 🚀
+        text: `🎉 *¡Hola! Bienvenido/a a ZYSOFT* 🚀
 
 Tu asistente virtual está aquí para ayudarte.
 
@@ -311,7 +361,7 @@ Tu asistente virtual está aquí para ayudarte.
 
 const enviarAyuda = async (sock, id) => {
     await sock.sendMessage(id, {
-        text: `🆘 *CENTRO DE AYUDA SYSOFT*
+        text: `🆘 *CENTRO DE AYUDA ZYSOFT*
 
 📌 *Comandos disponibles:*
 • *menu* - Menú principal
@@ -353,7 +403,7 @@ const enviarEstadisticas = async (sock, id) => {
 const enviarMensajeMasivo = async (sock, mensaje) => {
     for (const userId in userContext) {
         try {
-            await sock.sendMessage(userId, { text: `📢 *MENSAJE DE SYSOFT*\n\n${mensaje}` });
+            await sock.sendMessage(userId, { text: `📢 *MENSAJE DE ZYSOFT*\n\n${mensaje}` });
             await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo entre mensajes
         } catch (error) {
             console.error(`Error enviando mensaje a ${userId}:`, error);
@@ -368,26 +418,28 @@ const enviarInfoChatbots = async (sock, id) => {
 
 🚀 Aprende desde cero y lanza tu propio bot inteligente con conexión a ChatGPT y bases de datos.
 
-📆 *Inicio:* Viernes 18 de junio  
+📆 *Inicio:* Viernes 21 de junio  
 💳 *Precio Normal:* 120 Bs / $18 USD  
-🎁 *OFERTA ESPECIAL:* 105 Bs / $15 USD
+🎁 *OFERTA ESPECIAL:* 105 Bs / $15 USD 12$ de descuento
 
 🕘 *Horarios por país:*
-🇦🇷 🇺🇾 🇵🇾 22:30  
-🇧🇴 🇻🇪 🇩🇴 🇳🇱 🇵🇷 🇨🇱 21:30  
-🇨🇴 🇵🇪 🇪🇨 20:30  
-🇲🇽 🇵🇦 🇨🇷 🇸🇻 🇭🇳 🇳🇮 19:30
+🇦🇷 🇺🇾 🇵🇾 09:00 am - 12:00 pm
+🇧🇴 🇻🇪 🇩🇴 🇳🇱 🇵🇷 🇨🇱 08:00 am - 11:00 am
+🇨🇴 🇵🇪 🇪🇨 07:00am - 10:00 am
+🇲🇽 🇵🇦 🇨🇷 🇸🇻 🇭🇳 🇳🇮 06:00 -09:00
 
 ⏳ *Duración:* 2 días intensivos
 🎥 *Modalidad:* Online en vivo (Zoom)
 🧠 *Requisitos:* Conocimientos básicos de programación
 
 🎯 *Lo que aprenderás:*
-• Desarrollo con Node.js y Baileys
-• Integración con ChatGPT API
-• Conexión a bases de datos
-• Despliegue en servidores
-• Monetización de bots`
+• Instalación de entorno con Node.js
+• Conectar chatbot a Whatsapp
+• Crear respuestas personalizadas
+• Diseñar menús interactivos
+• Conexión a la base de datos
+• Integrar respuesta con ChatGPT
+• Subir el bot a un servidor`
     });
 
     // Enviar PDF del temario
@@ -414,16 +466,15 @@ Responde *"INSCRIBIRME"* o *"SI"* para recibir los métodos de pago.
 
 const enviarInfoProyectosUniversitarios = async (sock, id) => {
     await sock.sendMessage(id, { 
-        image: fs.readFileSync('./public/img/QRpago.jpeg'),
-        caption: `🎓 *DESARROLLO DE PROYECTOS UNIVERSITARIOS*
+        image: fs.readFileSync('./public/img/ZYSSOFFT.jpg'),
+        caption: `🎓 *DESARROLLO DE PROYECTOS*
 
-👨‍🎓 Te ayudamos con tu proyecto de grado, tesis o trabajos académicos relacionados con programación y tecnología.
+👨‍🎓 Realizamos proyectos, trabajos académicos relacionados con programación y tecnología.
 
 💡 *Servicios incluidos:*
 • Desarrollo de aplicaciones web completas
 • Sistemas de gestión empresarial
 • APIs RESTful y bases de datos
-• Documentación técnica profesional
 • Asesoría durante todo el proceso
 • Presentaciones y defensas
 
@@ -437,16 +488,35 @@ const enviarInfoProyectosUniversitarios = async (sock, id) => {
 📞 *Consulta gratuita incluida*
 ⏰ *Entrega garantizada en fechas acordadas*
 
-📲 ¿Te interesa? Responde *"SI"* para recibir más información y presupuesto personalizado.` 
+👤 *¿Te interesa este servicio?*
+Un asesor especializado se pondrá en contacto contigo para brindarte información personalizada y cotización.
+
+⏰ *Tiempo de respuesta:* 5-15 minutos` 
     });
     
-    userContext[id].esperandoConfirmacion = true;
-    userContext[id].servicioSolicitado = 'Proyecto Universitario';
-};
+    // CAMBIO IMPORTANTE: Transferir directamente a asesor sin esperar confirmación
+    userContext[id].conAsesor = true;
+    userContext[id].horaInicioAsesor = Date.now();
+    
+    // Notificar a asesores sobre consulta de proyecto universitario
+    for (const asesor of advisorNumbers) {
+        await sock.sendMessage(asesor, {
+            text: `🎓 *CONSULTA - PROYECTO UNIVERSITARIO*
+            
+📱 Usuario: ${id.replace('@s.whatsapp.net', '')}
+⏰ Hora: ${new Date().toLocaleString()}
+💼 Servicio: Proyecto Universitario
+🔔 Estado: Cliente interesado, requiere atención personalizada
 
+El usuario ha consultado sobre desarrollo de proyectos universitarios. Favor contactar para brindar información detallada y cotización.`
+        });
+    }
+    
+    // NO establecer esperandoConfirmacion ni servicioSolicitado
+};
 const enviarInfoDesarrolloWeb = async (sock, id) => {
     await sock.sendMessage(id, { 
-        image: fs.readFileSync('./public/img/QRpago.jpeg'),
+        image: fs.readFileSync('./public/img/ZYSSOFFT.jpg'),
         caption: `💻 *DESARROLLO WEB PROFESIONAL A MEDIDA*
 
 🚀 Creamos aplicaciones web personalizadas según las necesidades específicas de tu negocio.
@@ -475,13 +545,32 @@ const enviarInfoDesarrolloWeb = async (sock, id) => {
 📞 *Consulta y cotización gratuita*
 🎯 *Proyectos desde $200 USD*
 
-📲 ¿Listo para digitalizar tu negocio? Responde *"SI"* para comenzar.` 
+👤 *¿Te interesa este servicio?*
+Un asesor especializado se pondrá en contacto contigo para brindarte información personalizada y cotización según tus necesidades.
+
+⏰ *Tiempo de respuesta:* 5-15 minutos` 
     });
     
-    userContext[id].esperandoConfirmacion = true;
-    userContext[id].servicioSolicitado = 'Desarrollo Web';
-};
+    // CAMBIO IMPORTANTE: Transferir directamente a asesor sin esperar confirmación
+    userContext[id].conAsesor = true;
+    userContext[id].horaInicioAsesor = Date.now();
+    
+    // Notificar a asesores sobre consulta de desarrollo web
+    for (const asesor of advisorNumbers) {
+        await sock.sendMessage(asesor, {
+            text: `💻 *CONSULTA - DESARROLLO WEB*
+            
+📱 Usuario: ${id.replace('@s.whatsapp.net', '')}
+⏰ Hora: ${new Date().toLocaleString()}
+💼 Servicio: Desarrollo Web a Medida
+🔔 Estado: Cliente interesado, requiere atención personalizada
 
+El usuario ha consultado sobre desarrollo web profesional. Favor contactar para brindar información detallada y cotización personalizada.`
+        });
+    }
+    
+    // NO establecer esperandoConfirmacion ni servicioSolicitado
+};
 const enviarInfoLaravel = async (sock, id) => {
     await sock.sendMessage(id, { 
         image: fs.readFileSync('./public/img/LARAVEL.jpg'),
@@ -565,7 +654,7 @@ const menuSeleccion = async (sock, id, menukey) => {
 
     try {
         await sock.sendMessage(id, {
-            image: fs.readFileSync('./public/img/GIFanuncios.gif'),
+            image: fs.readFileSync('./public/img/ZYSSOFFT.jpg'),
             caption: menuMensaje
         });
     } catch (error) {
@@ -597,7 +686,7 @@ const enviarMenu = async (sock, id, menukey) => {
 // ===== CONFIGURACIÓN DE MENÚS =====
 const menuData = {
     main: {
-        mensaje: `🎉 *¡Bienvenido/a a SYSOFT!* 🚀
+        mensaje: `🎉 *¡Bienvenido/a a ZYSOFT!* 🚀
 
 Somos tu aliado tecnológico especializado en programación y desarrollo. Aquí encontrarás cursos de alta calidad y servicios profesionales para potenciar tus habilidades.
 
@@ -610,10 +699,11 @@ Somos tu aliado tecnológico especializado en programación y desarrollo. Aquí 
             B: {
                 text: "🅱️ Información Curso de Laravel",
                 respuesta: {
-                    tipo: "text",
-                    msg: "📚 Próximamente: Curso completo de Laravel básico, avanzado y desarrollo de APIs profesionales. ¡Mantente atento! 🚀"
+                    tipo: "image",
+                    msg: fs.readFileSync('./public/img/LARAVEL.jpg')
                 }
             },
+
             C: {
                 text: "💻 Desarrollo de aplicaciones web a medida",
                 respuesta: {
@@ -625,7 +715,7 @@ Somos tu aliado tecnológico especializado en programación y desarrollo. Aquí 
                 text: "🎓 Desarrollo de proyectos universitarios",
                 respuesta: {
                     tipo: "image", 
-                    msg: fs.readFileSync('./public/img/poster.png')
+                    msg: ""
                 }
             },
             E: {
@@ -646,7 +736,7 @@ Mientras tanto, puedes continuar explorando nuestros servicios. 😊`
 };
 
 // ===== INICIAR EL BOT =====
-console.log('🤖 Iniciando SYSOFT WhatsApp Bot...');
+console.log('🤖 Iniciando ZYSOFT WhatsApp Bot...');
 conectarWhatsapp().catch(error => {
     console.error('❌ Error fatal al iniciar el bot:', error);
     process.exit(1);
